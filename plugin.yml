@@ -1,0 +1,52 @@
+#name, main, version and api are required
+name: TES
+main: TES\MainClass
+version: 1.1.0
+api: 3.0.0
+
+load: POSTWORLD
+author: folosuru
+description: for TES
+commands:
+ example:
+  description: Example command
+  usage: "/example"
+  permission: TES.command.example
+ hub:
+  description: goto hub
+  usage: "/hub"
+  permission: TES.command.hub
+ disc:
+  description: discord test
+  usage: "/disc"
+  permission: TES.command.disc
+ register:
+  description: register test
+  usage: "/register"
+  permission: TES.command.register
+ savepda:
+  description: save player data.
+  usage: "/savepda"
+  permission: TES.command.savepda
+
+
+permissions:
+ TES.command.example:
+  description: "Allows the user to run the example command"
+  default: true
+
+ TES.command.hub:
+  description: "Allows the user to run the example command"
+  default: true
+
+ TES.command.disc:
+  description: "Allows the user to run the example command"
+  default: true
+
+TES.command.register:
+  description: "Allows the user to run command"
+  default: true
+
+TES.command.savepda:
+  description: "Allows the user to run command"
+  default: true
