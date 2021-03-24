@@ -6,8 +6,8 @@ TESで使ってるPMMPのプラグインです。まぁとりあえず公開。
 srcフォルダとplugin.ymlをPMMPのPluginsフォルダの中に作ったフォルダにぶち込む。
 #### いろいろ
 コードがとても汚いです。読んでると吐き気を催してくると思います。ゆるして  
-公開に当たり、WebhookのURL等は消してあります。
-bbo51dog様の[PMDiscordAPI](https://github.com/bbo51dog/PMDiscordAPI)を使わせていただいております。
+公開に当たり、WebhookのURL等は消してあります。  
+それと、bbo51dog様の[PMDiscordAPI](https://github.com/bbo51dog/PMDiscordAPI)を使っています。マジ感謝。
 #### ライセンス
 このプログラムとかはMITライセンスが適用されています。
 具体的にどういう物かを説明すると  
