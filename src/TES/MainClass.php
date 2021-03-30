@@ -65,7 +65,7 @@ class MainClass extends PluginBase implements Listener{
 //			->setCustomName("from PMMP server");
 //		Sender::send($webhook);
 		$this->getServer()->getPluginManager()->registerEvents($this,$this);
-		$this->WebhookURL = "https://discord.com/api/webhooks/816533633208549376/CyIo52uELVMlPrYjwD2xLzLOf5HXblG9UjNNFSmUbvXgiyCZFIwkzhZOTs-0JkRdNq_5";
+		$this->WebhookURL = "https://discord.com/api/webhooks/xxxxxxxxxx";
 	}
 
 	public function onDisable() : void{
