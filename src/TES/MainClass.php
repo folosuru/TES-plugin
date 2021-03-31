@@ -26,7 +26,11 @@ use bbo51dog\pmdiscord\element\Embeds;
 /*
 useクソ多いけど多分いくつか使ってないよねこれ
 */
-
+//???????????????????????????????????????????????????????????????????????????
+/*
+????????????????
+????????????????
+*/
 /*
 オッスオラfolosuru！後世のためにメモを残しとくぞ！
 $this->player_data
@@ -49,7 +53,7 @@ class MainClass extends PluginBase implements Listener{
 
 	public function onEnable() : void{
 		$this->someword = "unchi";
-		$this->country =  array('zennaka' => , );
+		$this->country_data =  array('zennaka' => array('currency' => "ACP","menber" =>array("a"), ), );
 		$this->getServer()->getPluginManager()->registerEvents(new ExampleListener($this), $this);
 		$this->getScheduler()->scheduleRepeatingTask(new BroadcastTask($this->getServer()), 1200);//BroadcastTaskのアレを120tickごとに動かす
 		//$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
@@ -61,7 +65,7 @@ class MainClass extends PluginBase implements Listener{
 //			->setCustomName("from PMMP server");
 //		Sender::send($webhook);
 		$this->getServer()->getPluginManager()->registerEvents($this,$this);
-		$this->WebhookURL = "https://discord.com/api/webhooks/xxxxxxxxxx";
+		$this->WebhookURL = "https://discord.com/api/webhooks/";
 	}
 
 	public function onDisable() : void{
@@ -102,17 +106,19 @@ class MainClass extends PluginBase implements Listener{
 						case 'help':
 							$sender->sendMessage("[country help]");
 							$sender->sendMessage("/country help:このヘルプを表示します。");
-							$sender->sendMessage("/country new [名前]:新たに国を作成します。すでに国に所属している場合はできません。");
+							$sender->sendMessage("/country new [名前] [通貨の単位(例:円)]:新たに国を作成します。すでに国に所属している場合はできません。");
 							return true;
 						case "new":
 							$sender->sendMessage($args[0].$args[1]);
-							/*if ($this->player_data[$sender->getName()]["country"] = "default"){
+							if ($this->player_data[$sender->getName()]["country"] = "default"){
 								if (array_key_exists($args[1],$this->country_data)){
 									$sender->sendMessage("[国家作成]その名前の国家はすでに存在します");
 								}else {
-									$sender->sendMessage("新たに国家".$args[1]."を作成しました！");
+									$this->country_data[$args[1]] = array('currency' => $args[2], "menber" => array($sender->getName()));
+									$sender->sendMessage("[国家作成]新たに国家".$args[1]."を作成しました！");
+									$sender->sendMessage($this->country_data[$args[1]]["currency"].$this->country_data[$args[1]]["menber"][0]);
 								}
-							}*/
+							}
 						default:
 							// code...
 							break;
