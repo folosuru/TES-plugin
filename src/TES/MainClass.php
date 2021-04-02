@@ -42,7 +42,8 @@ $this->player_data
 plugin_data/TES/*.json
 	これは上の情報を保存するとこだな！*にはプレイヤーの名前を入れるぞ！
 	名前の通りjson形式だ！
-
+$this->country_territory
+	国の領土だ！例によって連想配列になっていて、"[x座標/50の小数点以下切り捨て]_[y座標/50の小数点以下切り捨て]"=>”所有国家”だ！
 	*/
 class MainClass extends PluginBase implements Listener{
 	public $api;
@@ -52,11 +53,13 @@ class MainClass extends PluginBase implements Listener{
 	}
 
 	public function onEnable() : void{
+		/*ここに起動時処理をぶち込む。仮のものが多々。*/
 		$this->someword = "unchi";
 		$this->country_data =  array('zennaka' => array('currency' => "ACP","menber" =>array("a"), ), );
+		$this->country_territory = array("0_0"=>"");
 		$this->getServer()->getPluginManager()->registerEvents(new ExampleListener($this), $this);
 		$this->getScheduler()->scheduleRepeatingTask(new BroadcastTask($this->getServer()), 1200);//BroadcastTaskのアレを120tickごとに動かす
-		//$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
+		$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
 		$this->getLogger()->info(TextFormat::DARK_GREEN . "I've been enabled!");
 //		$content = new Content();
 //		$content->setText("サーバーが起動しました");
@@ -120,7 +123,7 @@ class MainClass extends PluginBase implements Listener{
 								}
 							}
 						default:
-							// code...
+						$sender->sendMessage("使い方は/country helpで確認してください。");
 							break;
 					}				}
 				return true;
