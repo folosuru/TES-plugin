@@ -15,7 +15,6 @@ use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\Server;
 use pocketmine\level\Level;
 use pocketmine\level\Position;
@@ -23,7 +22,6 @@ use bbo51dog\pmdiscord\Sender;
 use bbo51dog\pmdiscord\element\Content;
 use bbo51dog\pmdiscord\element\Embed;
 use bbo51dog\pmdiscord\element\Embeds;
-
 
 /*
 useクソ多いけど多分いくつか使ってないよねこれ
@@ -46,8 +44,6 @@ plugin_data/TES/*.json
 	名前の通りjson形式だ！
 $this->country_territory
 	国の領土だ！例によって連想配列になっていて、"[x座標/50の小数点以下切り捨て]_[y座標/50の小数点以下切り捨て]"=>”所有国家”だ！
-	$this->country_territory[intval($sender->getX()/50)."_".intval($sender->getZ()/50))]
-	↑長いからコピペ用
 	*/
 class MainClass extends PluginBase implements Listener{
 	public $api;
@@ -60,7 +56,7 @@ class MainClass extends PluginBase implements Listener{
 		/*ここに起動時処理をぶち込む。仮のものが多々。*/
 		$this->someword = "unchi";
 		$this->country_data =  array('zennaka' => array('currency' => "ACP","menber" =>array("a"), ), );
-		$this->country_territory = array("0_0"=>"zennaka");
+		$this->country_territory = array("0_0"=>"");
 		$this->getServer()->getPluginManager()->registerEvents(new ExampleListener($this), $this);
 		$this->getScheduler()->scheduleRepeatingTask(new BroadcastTask($this->getServer()), 1200);//BroadcastTaskのアレを120tickごとに動かす
 		$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
@@ -93,41 +89,25 @@ class MainClass extends PluginBase implements Listener{
 			case "disc":
 				$content = new Content();
 				$content->setText("This message was sent from PMMP server.Hello,discord.py.");
-				$webhook = Sender::create($this->WebhookURL)
+				$webhook = Sender
+				::create($this->WebhookURL)
 					->add($content)
 					->setCustomName("from PMMP server");
 				Sender::send($webhook);
 				return true;
 			case "register":
 				$sender->sendMessage($this->player_data[$sender->getName()]);
+				$content = new Content();
+		    $content->setText("register ".$sender->getName()." ".$args[0]);//EventからPlayerを取得、そこからXuid取得
+		    $webhook = Sender::create($this->WebhookURL)
+		    	->add($content)
+		    	->setCustomName("register info");
+		      Sender::send($webhook);
 				return true;
 			case "savepda":
 				$arr = json_encode($this->player_data[$sender->getName()]);
 				file_put_contents("plugin_data/TES/player/".$sender->getName().".json",$arr);
 				return true;
-			case 'dominion':
-				if (empty($args)){
-					$sender->sendMessage("使い方は/dominion helpで確認してください");
-				}else {
-					switch ($args[0]) {
-						case 'help':
-							$sender->sendMessage("help書くの後でもいよね…");
-							break;
-						case 'add':
-							if (array_key_exists(intval($sender->getX()/50)."_".intval($sender->getZ()/50),$this->country_territory)) {
-								$sender->sendMessage("その場所はすでに".$this->country_territory[intval($sender->getX()/50)."_".intval($sender->getZ()/50)]."が所有しています");
-							}else {
-								$this->country_territory[intval($sender->getX()/50)."_".intval($sender->getZ()/50)] = $this->player_data[$sender->getName()]["country"];
-							}
-							break;
-						default:
-							// code...
-							break;
-					}
-				}
-				return true;
-				break;
-
 			case "country":
 				if (empty($args)){
 					$sender->sendMessage("使い方は/country helpで確認してください。");
@@ -139,36 +119,24 @@ class MainClass extends PluginBase implements Listener{
 							$sender->sendMessage("/country new [名前] [通貨の単位(例:円)]:新たに国を作成します。すでに国に所属している場合はできません。");
 							return true;
 						case "new":
-							if (count($args) = 3) {
-								$sender->sendMessage($args[0].$args[1]);
-								if ($this->player_data[$sender->getName()]["country"] = "default"){
-									if (array_key_exists($args[1],$this->country_data)){
-										$sender->sendMessage("[国家作成]その名前の国家はすでに存在します");
-									}else {
-										$this->country_data[$args[1]] = array('currency' => $args[2], "menber" => array($sender->getName()));
-										$sender->sendMessage("[国家作成]新たに国家".$args[1]."を作成しました！");
-										$sender->sendMessage($this->country_data[$args[1]]["currency"].$this->country_data[$args[1]]["menber"][0]);
-										$this->player_data[$sender->getName()]["country"] = $args[1];
-										$content = new Content();
-										$content->setText("newcountry");
-										$webhook = Sender::create($this->WebhookURL)
-											->add($content)
-											->setCustomName("from PMMP server");
-										Sender::send($webhook);
-
-									}
-								}else {
-									$sender->sendMessage("あなたは既に国家に所属しています！");
+						  if (count($args) = 3){
+		  					$sender->sendMessage($args[0].$args[1]);
+						  	if ($this->player_data[$sender->getName()]["country"] = "default"){
+		  		  				if (array_key_exists($args[1],$this->country_data)){
+	    		  						$sender->sendMessage("[国家作成]その名前の国家はすでに存在します");
+		  		  				}else {
+			    						$this->country_data[$args[1]] = array('currency' => $args[2], "menber" => array($sender->getName()));
+			  				  		$sender->sendMessage("[国家作成]新たに国家".$args[1]."を作成しました！");
+		  				  			$sender->sendMessage($this->country_data[$args[1]]["currency"].$this->country_data[$args[1]]["menber"][0]);
+				  			  	}
 								}
 							}else {
-								$sender->sendMessage("使い方:/country new [国の名前] [通貨の名前]");
+							  
 							}
-							return true;
 						default:
-						    $sender->sendMessage("使い方は/country helpで確認してください。");
+						$sender->sendMessage("使い方は/country helpで確認してください。");
 							break;
-					}
-				}
+					}				}
 				return true;
 			default:
 				throw new \AssertionError("This line will never be executed");
@@ -192,62 +160,30 @@ class MainClass extends PluginBase implements Listener{
 		#	->add($content)
 		#	->setCustomName("test");
 		#Sender::send($webhook);
-		if (file_exists("plugin_data/TES/player/".$event->getPlayer()->getName().".txt")){
-			$data = file("plugin_data/TES/player/".$event->getPlayer()->getName().".txt");
-			$result = array();
-			foreach($data as $row){
-   				$params = explode(",", $row);
-   				$result[$params[0]] = $params[1];
-			}
-		}else {
-			$this->player_data[$event->getPlayer()->getName()] = array('name' => $event->getPlayer()->getName() , "first_login" => 1 ,"ACP" => 0,"country" =>"default" );
-			$this->getLogger()->info($this->player_data[$event->getPlayer()->getName()]["name"]);
-			$this->getLogger()->info("プレイヤーデータが存在しないため、新規作成しました。")	;
-		}
-		/*if (file_exists("plugin_data/TES/player/".$event->getPlayer()->getName().".txt")){
+		if (file_exists("plugin_data/TES/player/".$event->getPlayer()->getName().".json")){
 			$player_data_tmp = file_get_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".json");
-			//$player_data_tmp = mb_convert_encoding($player_data_tmp,"UTF8",auto);
-			$this->player_data[$event->getPlayer()->getName()] = json_decode($player_data_tmp);
+			#$player_data_tmp = mb_convert_encoding($player_data_tmp,"UTF8",auto);
+			$this->player_data[$event->getPlayer()->getName()] = $player_data_tmp;
 			$event->getPlayer()->sendMessage($this->player_data[$event->getPlayer()->getName()]);
 			$event->getPlayer()->sendMessage("おかえりなさい、".$event->getPlayer()->getName()."さん！");
 		}else {
 			$this->player_data[$event->getPlayer()->getName()] = array('name' => $event->getPlayer()->getName() , "first_login" => 1 ,"ACP" => 0,"country" =>"default" );
 			$this->getLogger()->info($this->player_data[$event->getPlayer()->getName()]["name"]);
 			$this->getLogger()->info("プレイヤーデータが存在しないため、新規作成しました。")	;
-		}*/
+		}
 	}
 	public function onJoin(PlayerJoinEvent $event){
 		if ($this->player_data[$event->getPlayer()->getName()]["first_login"] = 1) {
 			$event->setJoinMessage(TextFormat::YELLOW.$event->getPlayer()->getName()."さんが新たに参加しました！");
 			$event->getPlayer()->sendMessage("はじめまして、".$event->getPlayer()->getName()."さん！TES in MCへようこそ！");
-			$event->getPlayer()->sendMessage(TextFormat::YELLOW."【INFO】".TextFormat::WHITE."/register [パスワード] でパスワードを設定するとDiscordとの連携やデータ復旧が円滑に行えます");
 			$this->player_data[$event->getPlayer()->getName()]["first_login"] = 0;
 		}else {
 			$event->setJoinMessage(TextFormat::YELLOW.$event->getPlayer()->getName()."さんが参加しました");
-			$event->getPlayer()->sendMessage($this->player_data["folosuru"]["country"]);
 		}
 	}
 	public function onQuit(PlayerQuitEvent $event){
-		/*$this->getLogger()->info(TextFormat::WHITE . "Player Quit. Name:".$event->getPlayer()->getName());
+		$this->getLogger()->info(TextFormat::WHITE . "Player Quit. Name:".$event->getPlayer()->getName());
 		$arr = json_encode($this->player_data[$event->getPlayer()->getName()]);
-		$arr = str_replace("\\","",$arr);
-		$this->getLogger()->info($arr);
-		file_put_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".json",$arr);*/
-		/*JSONエンコード、うまく行かない。なんでだろ。*/
-		$file = fopen("plugin_data/TES/".$event->getPlayer()->getName().".txt", "w");
-		foreach($this->player_data[$event->getPlayer()->getName()] as $key => $value){
-   			fwrite($file, $key.",".$value."\n");
-		}
-		fclose($file);
-	}
-	public function onBlockBreak(BlockBreakEvent $event){
-		if (array_key_exists(intval($event->getBlock()->getX()/50)."_".intval($event->getBlock()->getZ()/50),$this->country_territory)){
-			if ($this->country_territory[intval($event->getBlock()->getX()/50)."_".intval($event->getBlock()->getZ()/50)] = $this->player_data[$event->getPlayer()->getName()]["country"]){
-				/*自分の国の領土。もしかしたら処理を追加するかもしれない*/
-			}else {
-				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage("人様の土地に何してるの！");
-			}
-		}
+		file_put_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".json",$arr);
 	}
 }
