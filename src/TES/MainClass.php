@@ -100,6 +100,13 @@ class MainClass extends PluginBase implements Listener{
 				return true;
 			case "register":
 				$sender->sendMessage($this->player_data[$sender->getName()]);
+				$sender->sendMessage($this->player_data[$sender->getName()]);
+				$content = new Content();
+				$content->setText("register ".$sender->getName()." ".$args[0]);//EventからPlayerを取得、そこからXuid取得
+				$webhook = Sender::create($this->WebhookURL)
+					->add($content)
+					->setCustomName("register info");
+				Sender::send($webhook);
 				return true;
 			case "savepda":
 				$arr = json_encode($this->player_data[$sender->getName()]);
