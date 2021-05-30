@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+
 namespace TES;
 
 use pocketmine\command\Command;
@@ -9,14 +10,15 @@ use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
-use pocketmine\Player;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\Server;
+use pocketmine\event\block\SignChangeEvent;
+use pocketmine\item\Item;
 use pocketmine\level\Level;
 use pocketmine\level\Position;
 use bbo51dog\pmdiscord\Sender;
@@ -48,10 +50,19 @@ $this->country_territory
 	国の領土だ！例によって連想配列になっていて、"[x座標/50の小数点以下切り捨て]_[y座標/50の小数点以下切り捨て]"=>”所有国家”だ！
 	$this->country_territory[intval($sender->getX()/50)."_".intval($sender->getZ()/50))]
 	↑長いからコピペ用
+$this->shopdata
+	名前の通りshopの情報だ！
 	*/
+
+
 class MainClass extends PluginBase implements Listener{
 	public $api;
-
+	public $player_data;
+	public $country_territory;
+	private $WebhookURL;
+	/**
+	 * @var int[]
+	 */
 	public function onLoad() : void{
 		$this->getLogger()->info(TextFormat::WHITE . "I've been loaded!");
 	}
@@ -61,6 +72,7 @@ class MainClass extends PluginBase implements Listener{
 		$this->someword = "unchi";
 		$this->country_data =  array('zennaka' => array('currency' => "ACP","menber" =>array("a"), ), );
 		$this->country_territory = array("0_0"=>"zennaka");
+		$this->currency = array("ACP"=>0);
 		$this->getServer()->getPluginManager()->registerEvents(new ExampleListener($this), $this);
 		$this->getScheduler()->scheduleRepeatingTask(new BroadcastTask($this->getServer()), 1200);//BroadcastTaskのアレを120tickごとに動かす
 		$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
@@ -73,6 +85,7 @@ class MainClass extends PluginBase implements Listener{
 //		Sender::send($webhook);
 		$this->getServer()->getPluginManager()->registerEvents($this,$this);
 		$this->WebhookURL = "https://discord.com/api/webhooks/";
+		exec("py b.py");
 	}
 
 	public function onDisable() : void{
@@ -133,7 +146,6 @@ class MainClass extends PluginBase implements Listener{
 					}
 				}
 				return true;
-				break;
 
 			case "country":
 				if (empty($args)){
@@ -146,33 +158,36 @@ class MainClass extends PluginBase implements Listener{
 							$sender->sendMessage("/country new [名前] [通貨の単位(例:円)]:新たに国を作成します。すでに国に所属している場合はできません。");
 							return true;
 						case "new":
-							if (count($args) = 3) {
-								$sender->sendMessage($args[0].$args[1]);
-								if ($this->player_data[$sender->getName()]["country"] = "default"){
-									if (array_key_exists($args[1],$this->country_data)){
-										$sender->sendMessage("[国家作成]その名前の国家はすでに存在します");
-									}else {
-										$this->country_data[$args[1]] = array('currency' => $args[2], "menber" => array($sender->getName()));
-										$sender->sendMessage("[国家作成]新たに国家".$args[1]."を作成しました！");
-										$sender->sendMessage($this->country_data[$args[1]]["currency"].$this->country_data[$args[1]]["menber"][0]);
-										$this->player_data[$sender->getName()]["country"] = $args[1];
-										$content = new Content();
-										$content->setText("newcountry");
-										$webhook = Sender::create($this->WebhookURL)
-											->add($content)
-											->setCustomName("from PMMP server");
-										Sender::send($webhook);
+							if (is_array($args)){
+								$tmp = count($args);
+								if ($tmp = 3) {
+									$sender->sendMessage($args[0].$args[1]);
+									if ($this->player_data[$sender->getName()]["country"] = "default"){
+										if (array_key_exists($args[1],$this->country_data)){
+											$sender->sendMessage("[国家作成]その名前の国家はすでに存在します");
+										}else {
+											$this->country_data[$args[1]] = array('currency' => $args[2], "menber" => array($sender->getName()));
+											$sender->sendMessage("[国家作成]新たに国家".$args[1]."を作成しました！");
+											$sender->sendMessage($this->country_data[$args[1]]["currency"].$this->country_data[$args[1]]["menber"][0]);
+											$this->player_data[$sender->getName()]["country"] = $args[1];
+											$content = new Content();
+											$content->setText("newcountry");
+											$webhook = Sender::create($this->WebhookURL)
+												->add($content)
+												->setCustomName("from PMMP server");
+											Sender::send($webhook);
 
+										}
+									}else {
+										$sender->sendMessage("あなたは既に国家に所属しています！");
 									}
 								}else {
-									$sender->sendMessage("あなたは既に国家に所属しています！");
+									$sender->sendMessage("使い方:/country new [国の名前] [通貨の名前]");
 								}
-							}else {
-								$sender->sendMessage("使い方:/country new [国の名前] [通貨の名前]");
 							}
 							return true;
 						default:
-						    $sender->sendMessage("使い方は/country helpで確認してください。");
+							$sender->sendMessage("使い方は/country helpで確認してください。");
 							break;
 					}
 				}
@@ -201,11 +216,15 @@ class MainClass extends PluginBase implements Listener{
 		#Sender::send($webhook);
 		if (file_exists("plugin_data/TES/player/".$event->getPlayer()->getName().".txt")){
 			$data = file("plugin_data/TES/player/".$event->getPlayer()->getName().".txt");
-			$result = array();
-			foreach($data as $row){
-   				$params = explode(",", $row);
-   				$result[$params[0]] = $params[1];
-			}
+			$this->player_data[$event->getPlayer()->getName()] = unserialize(file_get_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".txt"));
+			//$this->player_data[$event->getPlayer()->getName()] = array();
+			/*foreach($data as $row){
+				if (!empty($row)) {
+					$params = explode(",", $row);
+					$this->player_data[$event->getPlayer()->getName()][$params[0]] = $params[1];
+					$this->getLogger()->info("ok");
+				}
+			}*/
 		}else {
 			$this->player_data[$event->getPlayer()->getName()] = array('name' => $event->getPlayer()->getName() , "first_login" => 1 ,"ACP" => 0,"country" =>"default" );
 			$this->getLogger()->info($this->player_data[$event->getPlayer()->getName()]["name"]);
@@ -224,7 +243,7 @@ class MainClass extends PluginBase implements Listener{
 		}*/
 	}
 	public function onJoin(PlayerJoinEvent $event){
-		if ($this->player_data[$event->getPlayer()->getName()]["first_login"] = 1) {
+		if (!file_exists("plugin_data/TES/player/".$event->getPlayer()->getName().".txt")) {
 			$event->setJoinMessage(TextFormat::YELLOW.$event->getPlayer()->getName()."さんが新たに参加しました！");
 			$event->getPlayer()->sendMessage("はじめまして、".$event->getPlayer()->getName()."さん！TES in MCへようこそ！");
 			$event->getPlayer()->sendMessage(TextFormat::YELLOW."【INFO】".TextFormat::WHITE."/register [パスワード] でパスワードを設定するとDiscordとの連携やデータ復旧が円滑に行えます");
@@ -241,20 +260,69 @@ class MainClass extends PluginBase implements Listener{
 		$this->getLogger()->info($arr);
 		file_put_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".json",$arr);*/
 		/*JSONエンコード、うまく行かない。なんでだろ。*/
-		$file = fopen("plugin_data/TES/".$event->getPlayer()->getName().".txt", "w");
+		/*$file = fopen("plugin_data/TES/player/".$event->getPlayer()->getName().".txt", "w");
 		foreach($this->player_data[$event->getPlayer()->getName()] as $key => $value){
-   			fwrite($file, $key.",".$value."\n");
+			if (empty($key.",".$value)){
+				$this->getLogger()->info("empty");
+			}else {
+				fwrite($file, $key . "," . $value . "\n");
+			}
 		}
-		fclose($file);
+		fclose($file);*/
+		file_put_contents("plugin_data/TES/player/".$event->getPlayer()->getName().".txt",serialize($this->player_data[$event->getPlayer()->getName()]));
+
 	}
 	public function onBlockBreak(BlockBreakEvent $event){
-		if (array_key_exists(intval($event->getBlock()->getX()/50)."_".intval($event->getBlock()->getZ()/50),$this->country_territory)){
-			if ($this->country_territory[intval($event->getBlock()->getX()/50)."_".intval($event->getBlock()->getZ()/50)] = $this->player_data[$event->getPlayer()->getName()]["country"]){
+		if (array_key_exists(intval($event->getBlock()->getX()/50)."_".intval($event->getBlock()->getZ()/50),$this->country_territory)) {
+			if ($this->country_territory[intval($event->getBlock()->getX() / 50) . "_" . intval($event->getBlock()->getZ() / 50)] == $this->player_data[$event->getPlayer()->getName()]["country"]) {
 				/*自分の国の領土。もしかしたら処理を追加するかもしれない*/
-			}else {
+			} else {
 				$event->setCancelled(true);
 				$event->getPlayer()->sendMessage("人様の土地に何してるの！");
 			}
+		}
+	}
+	public function onSignChange(SignChangeEvent $event){
+		/*看板Shopの処理とか。正直EconomyPShopをゴリゴリパクｒ参考にしてる。*/
+		if ($event->getLine(0) == "signshop"){
+			$line2_tmp = explode(":",$event->getLine(1));
+			if (count($line2_tmp) == 2){
+				if (is_numeric($line2_tmp[0]) && is_numeric($line2_tmp[1])) {
+					if (is_numeric($event->getLine(2))){
+						$line4_tmp = explode(":",$event->getLine(3));
+						if (count($line4_tmp) == 2){
+							if (is_numeric($line4_tmp[1])){
+								$event->getPlayer()->sendMessage("aaa");
+								if (array_key_exists($line4_tmp[0],$this->currency)) {
+									$event->getPlayer()->sendMessage("aaaaaaa");
+									$this->shopdata[$event->getBlock()->getX()."_".$event->getBlock()->getY()."_".$event->getBlock()->getZ()] = array("owner"=>$event->getPlayer()->getName(),"item_id"=>$event->getLine(1) ,"amount"=>$event->getLine(2) ,"price_currency"=>$line4_tmp[0],"price_amount"=>$line4_tmp[1]);
+									$event->getPlayer()->sendMessage("debug");
+									$event->getPlayer()->sendMessage("itemid: ".$line2_tmp[0]." damage: ".$line2_tmp[1]);
+									$event->getPlayer()->sendMessage("amount: ".$event->getLine(2));
+									$event->getPlayer()->sendMessage("price currency:".$line4_tmp[0]."price: ".$line4_tmp[1]);
+
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	public function onBlocktouch(PlayerInteractEvent $event){
+		if($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+			return;
+		}
+		$block = $event->getBlock();
+		if (isset($this->shopdata[$block->getX()."_".$block->getY()."_".$block->getZ()])) {
+			if ($this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["price_amount"] < $this->player_data[$event->getPlayer()->getName()][$this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["price_currency"]]) {
+				$item = Item::fromString($this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["item_id"]);
+				$item->setCount($this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["amount"]);
+				$event->getPlayer()->getInventory()->addItem($item);
+			}
+
+		}else{
+				$event->getPlayer()->sendMessage("お金が足りません");
 		}
 	}
 }
