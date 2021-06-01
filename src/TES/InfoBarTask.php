@@ -32,7 +32,8 @@ class InfoBarTask extends Task{
 			}else {
 				$api->setScore($player, "sidebar","owner: none", 5, 6);
 			}
-
+			$api->setScore($player,"sidebar","ひとこと:".$this->TES->someword ,6,7);
+    
 
 		}
 
