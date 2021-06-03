@@ -52,9 +52,11 @@ $this->country_territory
 	↑長いからコピペ用
 $this->shopdata
 	名前の通りshopの情報だ！
-	*/
-
-
+*/
+/*
+1tick=1/20秒
+1200tick=60秒=1分
+*/
 class MainClass extends PluginBase implements Listener{
 	public $api;
 	public $player_data;
@@ -76,6 +78,7 @@ class MainClass extends PluginBase implements Listener{
 		$this->getServer()->getPluginManager()->registerEvents(new ExampleListener($this), $this);
 		$this->getScheduler()->scheduleRepeatingTask(new BroadcastTask($this->getServer()), 1200);//BroadcastTaskのアレを120tickごとに動かす
 		$this->getScheduler()->scheduleRepeatingTask(new InfoBarTask($this->getServer()), 4);
+		$this->getScheduler()->scheduleRepeatingTask(new AutoSaveTask($this->getServer()), 12000);
 		$this->getLogger()->info(TextFormat::DARK_GREEN . "I've been enabled!");
 //		$content = new Content();
 //		$content->setText("サーバーが起動しました");
@@ -85,7 +88,9 @@ class MainClass extends PluginBase implements Listener{
 //		Sender::send($webhook);
 		$this->getServer()->getPluginManager()->registerEvents($this,$this);
 		$this->WebhookURL = "https://discord.com/api/webhooks/";
-		exec("py b.py");
+		if (file_exists("b.py")){
+			exec("py b.py");
+		}
 	}
 
 	public function onDisable() : void{
@@ -319,10 +324,9 @@ class MainClass extends PluginBase implements Listener{
 				$item = Item::fromString($this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["item_id"]);
 				$item->setCount($this->shopdata[$block->getX() . "_" . $block->getY() . "_" . $block->getZ()]["amount"]);
 				$event->getPlayer()->getInventory()->addItem($item);
+			}else{
+					$event->getPlayer()->sendMessage("お金が足りません");
 			}
-
-		}else{
-				$event->getPlayer()->sendMessage("お金が足りません");
 		}
 	}
 }
